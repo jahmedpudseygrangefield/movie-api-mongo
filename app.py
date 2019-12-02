@@ -3,12 +3,10 @@ from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 import requests
 
-
 app = Flask(__name__)
 app.secret_key = "secret key"
 app.config["MONGO_URI"] = "mongodb://localhost:27017/movies"
 mongo = PyMongo(app)
-
 
 @app.route('/movie', methods=['POST'])
 def movie():
@@ -44,6 +42,7 @@ def info(id):
     runtime = json_object['Runtime']
     plot = json_object['Plot']
     released = json_object['Released']
+    watched = 'false'
 
     ratings = json_object['Ratings']
 
@@ -52,7 +51,7 @@ def info(id):
         value = rating['Value']
 
     if request.method == 'POST':
-        fav = mongo.db.userMovies.insert({'_id': id, 'title': title, 'rated': rated, 'poster': poster})
+        fav = mongo.db.userMovies.insert({'_id': id, 'title': title, 'rated': rated, 'poster': poster, 'watched': watched})
         resp = 'Added to Favourites'
         return resp
 
@@ -66,6 +65,20 @@ def delete_movie(id):
     resp = 'Movie removed successfully!'
     return resp
 
+
+
+
+@app.route('/Watched/<id>', methods=['POST'])
+def Watched_movie(id):
+    mongo.db.userMovies.update({'_id': id},{'$set':{'watched': 'true'}})
+    resp = 'Movie set to watched successfully!'
+    return userFavs
+
+@app.route('/unwatch/<id>', methods=['POST'])
+def unwatch_movie(id):
+    mongo.db.userMovies.update({'_id':id},{'$set':{'watched': 'false'}})
+    return userFavs()
+
 @app.route('/userFavs')
 def userFavs():
     favMovies = mongo.db.userMovies.find()
@@ -75,10 +88,10 @@ def userFavs():
 def index():
     return render_template('index.html')
 
-
 @app.route('/infosearch')
 def infosearch():
 	return render_template('info-search.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='127.0.0.1')
+
